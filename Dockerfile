@@ -37,7 +37,7 @@ RUN strip /usr/local/modsecurity/bin/* /usr/local/modsecurity/lib/*.a /usr/local
 FROM ubuntu:18.04 AS nginx-build
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV NGINX_VERSION 1.15.3-1
+ENV NGINX_VERSION 1.15.3
 
 RUN apt-get update -qq && \
 apt install  -qq -y --no-install-recommends --no-install-suggests \
