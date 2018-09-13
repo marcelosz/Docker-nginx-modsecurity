@@ -112,6 +112,52 @@ RUN mkdir -p /var/log/nginx/
 RUN touch /var/log/nginx/access.log
 RUN touch /var/log/nginx/error.log
 
+
+EXPOSE 80
+
+STOPSIGNAL SIGTERM
+
+CMD ["/usr/local/nginx/nginx", "-g", "daemon off;"]
+
+
+FROM ubuntu:18.04
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Libraries for ModSecurity
+RUN apt update && \
+apt-get install --no-install-recommends --no-install-suggests -y \
+ca-certificates \
+libcurl4-openssl-dev  \
+libyajl-dev \
+lua5.2-dev \
+libgeoip-dev \
+vim \
+libxml2
+RUN apt clean && \
+rm -rf /var/lib/apt/lists/*
+
+COPY --from=modsecurity-build /usr/local/modsecurity/ /usr/local/modsecurity/
+RUN ldconfig
+
+COPY --from=nginx-build /usr/local/nginx/nginx /usr/local/nginx/nginx
+
+COPY --from=nginx-build /etc/nginx /etc/nginx
+
+COPY --from=nginx-build /usr/local/nginx/html /usr/local/nginx/html
+
+# NGiNX Create log dirs
+RUN mkdir -p /var/log/nginx/
+RUN touch /var/log/nginx/access.log
+RUN touch /var/log/nginx/error.log
+
+RUN sed -i '38i modsecurity on;\n\tmodsecurity_rules_file /etc/nginx/modsecurity.d/include.conf;' /etc/nginx/nginx.conf
+RUN mkdir -p /etc/nginx/modsecurity.d
+RUN echo "include /etc/nginx/modsecurity.d/modsecurity.conf" > /etc/nginx/modsecurity.d/include.conf
+COPY --from=modsecurity-build /opt/ModSecurity/modsecurity.conf-recommended /etc/nginx/modsecurity.d
+RUN cd /etc/nginx/modsecurity.d && \
+    mv modsecurity.conf-recommended modsecurity.conf
+
 EXPOSE 80
 
 STOPSIGNAL SIGTERM
