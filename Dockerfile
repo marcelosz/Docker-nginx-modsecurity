@@ -112,19 +112,10 @@ RUN mkdir -p /var/log/nginx/
 RUN touch /var/log/nginx/access.log
 RUN touch /var/log/nginx/error.log
 
-
-EXPOSE 80
-
-STOPSIGNAL SIGTERM
-
-CMD ["/usr/local/nginx/nginx", "-g", "daemon off;"]
-
-
 FROM ubuntu:18.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
-# Libraries for ModSecurity
 RUN apt update && \
 apt-get install --no-install-recommends --no-install-suggests -y \
 ca-certificates \
@@ -158,7 +149,7 @@ COPY --from=modsecurity-build /opt/ModSecurity/modsecurity.conf-recommended /etc
 RUN cd /etc/nginx/modsecurity.d && \
     mv modsecurity.conf-recommended modsecurity.conf
 
-EXPOSE 80
+EXPOSE 80 443
 
 STOPSIGNAL SIGTERM
 
