@@ -150,6 +150,9 @@ COPY --from=modsecurity-build /opt/ModSecurity/unicode.mapping /etc/nginx/modsec
 RUN cd /etc/nginx/modsecurity.d && \
     mv modsecurity.conf-recommended modsecurity.conf
 
+VOLUME /etc/nginx
+VOLUME /var/log/nginx
+
 EXPOSE 80 443
 
 STOPSIGNAL SIGTERM
