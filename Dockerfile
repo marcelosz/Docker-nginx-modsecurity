@@ -146,6 +146,7 @@ RUN sed -i '38i modsecurity on;\n\tmodsecurity_rules_file /etc/nginx/modsecurity
 RUN mkdir -p /etc/nginx/modsecurity.d
 RUN echo "include /etc/nginx/modsecurity.d/modsecurity.conf" > /etc/nginx/modsecurity.d/include.conf
 COPY --from=modsecurity-build /opt/ModSecurity/modsecurity.conf-recommended /etc/nginx/modsecurity.d
+COPY --from=modsecurity-build /opt/ModSecurity/unicode.mapping /etc/nginx/modsecurity.d
 RUN cd /etc/nginx/modsecurity.d && \
     mv modsecurity.conf-recommended modsecurity.conf
 
