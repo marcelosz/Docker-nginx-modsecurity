@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  nginx-modsecurity:
+    image: marcelosz/nginx-modsecurity
+    build:
+        context: .
+        args:
+            - NGINX_VERSION=${NGINX_VERSION}
+            - MODSECURITY_TAG=${MODSECURITY_TAG}
+            

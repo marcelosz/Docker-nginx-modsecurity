@@ -1,6 +1,12 @@
-FROM ubuntu:18.04 as modsecurity-build
+#
+# Dockerfile to build a container with nginx, ModSecurity and certbot
+#
 
-# Install Prereqs
+#
+# Build modsecurity
+#
+FROM ubuntu:18.04 as modsecurity-build
+ARG MODSECURITY_TAG
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -qq && \
     apt install  -qq -y --no-install-recommends --no-install-suggests \
@@ -22,7 +28,8 @@ RUN apt-get update -qq && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN cd /opt && \
-    git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity && \
+    git clone --branch ${MODSECURITY_TAG} --depth 1  https://github.com/SpiderLabs/ModSecurity && \
+    #git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity && \
     cd ModSecurity && \
     git submodule init && \
     git submodule update && \
@@ -33,11 +40,12 @@ RUN cd /opt && \
 
 RUN strip /usr/local/modsecurity/bin/* /usr/local/modsecurity/lib/*.a /usr/local/modsecurity/lib/*.so*
 
-
+#
+# Build nginx
+#
 FROM ubuntu:18.04 AS nginx-build
-
+ARG NGINX_VERSION
 ENV DEBIAN_FRONTEND noninteractive
-ENV NGINX_VERSION 1.17.6
 
 RUN apt-get update -qq && \
 apt install  -qq -y --no-install-recommends --no-install-suggests \
@@ -112,8 +120,10 @@ RUN mkdir -p /var/log/nginx/
 RUN touch /var/log/nginx/access.log
 RUN touch /var/log/nginx/error.log
 
+#
+# Final image build
+#
 FROM ubuntu:18.04
-
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt update && \
@@ -124,7 +134,8 @@ libyajl-dev \
 lua5.2-dev \
 libgeoip-dev \
 vim \
-libxml2
+libxml2 \
+certbot
 RUN apt clean && \
 rm -rf /var/lib/apt/lists/*
 
@@ -137,12 +148,17 @@ COPY --from=nginx-build /etc/nginx /etc/nginx
 
 COPY --from=nginx-build /usr/local/nginx/html /usr/local/nginx/html
 
-# NGiNX Create log dirs
 RUN mkdir -p /var/log/nginx/
 RUN touch /var/log/nginx/access.log
 RUN touch /var/log/nginx/error.log
 
-RUN sed -i '38i modsecurity on;\n\tmodsecurity_rules_file /etc/nginx/modsecurity.d/include.conf;' /etc/nginx/nginx.conf
+# Adjust nginx configuration files and folders
+COPY samples/nginx.conf /etc/nginx/
+RUN mkdir -p /etc/nginx/sites-available
+COPY samples/default.conf /etc/nginx/sites-available/
+COPY samples/secure.conf /etc/nginx/sites-available/
+RUN mkdir -p /etc/nginx/sites-enabled
+RUN ln -sf /etc/nginx/sites-available/default.conf /etc/nginx/sites-enabled/default.conf
 RUN mkdir -p /etc/nginx/modsecurity.d
 RUN echo "include /etc/nginx/modsecurity.d/modsecurity.conf" > /etc/nginx/modsecurity.d/include.conf
 COPY --from=modsecurity-build /opt/ModSecurity/modsecurity.conf-recommended /etc/nginx/modsecurity.d
