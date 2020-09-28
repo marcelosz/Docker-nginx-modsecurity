@@ -157,6 +157,7 @@ COPY samples/nginx.conf /etc/nginx/
 RUN mkdir -p /etc/nginx/sites-available
 COPY samples/default.conf /etc/nginx/sites-available/
 COPY samples/secure.conf /etc/nginx/sites-available/
+COPY samples/ssl-reverse.conf /etc/nginx/sites-available/
 RUN mkdir -p /etc/nginx/sites-enabled
 RUN ln -sf /etc/nginx/sites-available/default.conf /etc/nginx/sites-enabled/default.conf
 RUN mkdir -p /etc/nginx/modsecurity.d
